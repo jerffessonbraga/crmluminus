@@ -1,8 +1,9 @@
-import { Inbox, Users, Bot, BarChart3, Settings, Zap, MessageSquare, Mail, Share2, Menu, X, Moon, Sun } from "lucide-react";
+import { Inbox, Users, Bot, BarChart3, Settings, Zap, MessageSquare, Mail, Share2, Menu, X, Moon, Sun, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { useTheme } from "@/components/ThemeProvider";
+import { useAuth } from "@/contexts/AuthContext";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface AppSidebarProps {
@@ -29,6 +30,12 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   const handleNav = (item: typeof menuItems[0]) => {
     onItemClick(item.id);
@@ -142,6 +149,13 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
                     {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
                     <span>{theme === "dark" ? "Modo Claro" : "Modo Escuro"}</span>
                   </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10"
+                  >
+                    <LogOut size={18} />
+                    <span>Sair</span>
+                  </button>
                   <div className="mt-2 flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-xs font-bold text-sidebar-accent-foreground">
                     OP
                   </div>
@@ -197,6 +211,13 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
             </button>
           );
         })}
+        <button
+          onClick={handleLogout}
+          title="Sair"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-destructive transition-all duration-200 hover:bg-destructive/10 hover:scale-110"
+        >
+          <LogOut size={20} />
+        </button>
         <div className="mt-2 flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-xs font-bold text-sidebar-accent-foreground">
           OP
         </div>
