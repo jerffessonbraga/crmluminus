@@ -65,7 +65,10 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
           return (
             <button
               key={item.id}
-              onClick={() => onItemClick(item.id)}
+              onClick={() => {
+                onItemClick(item.id);
+                if (item.path && item.path !== "#") navigate(item.path);
+              }}
               title={item.label}
               className="flex h-10 w-10 items-center justify-center rounded-xl text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
