@@ -1,7 +1,9 @@
-import { Inbox, Users, Bot, BarChart3, Settings, Zap, MessageSquare, Mail, Share2, Menu, X } from "lucide-react";
+import { Inbox, Users, Bot, BarChart3, Settings, Zap, MessageSquare, Mail, Share2, Menu, X, Moon, Sun } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { useTheme } from "@/components/ThemeProvider";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface AppSidebarProps {
   activeItem: string;
@@ -26,6 +28,7 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { theme, toggleTheme } = useTheme();
 
   const handleNav = (item: typeof menuItems[0]) => {
     onItemClick(item.id);
@@ -33,7 +36,26 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
     setMobileOpen(false);
   };
 
-  // Mobile: hamburger trigger + overlay drawer
+  const ThemeToggle = ({ size = 18, className = "" }: { size?: number; className?: string }) => (
+    <button
+      onClick={toggleTheme}
+      className={`flex items-center justify-center rounded-xl text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground ${className}`}
+      title={theme === "dark" ? "Modo claro" : "Modo escuro"}
+    >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={theme}
+          initial={{ rotate: -90, opacity: 0 }}
+          animate={{ rotate: 0, opacity: 1 }}
+          exit={{ rotate: 90, opacity: 0 }}
+          transition={{ duration: 0.15 }}
+        >
+          {theme === "dark" ? <Sun size={size} /> : <Moon size={size} />}
+        </motion.div>
+      </AnimatePresence>
+    </button>
+  );
+
   if (isMobile) {
     return (
       <>
@@ -43,67 +65,95 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
         >
           <Menu size={20} />
         </button>
+        {/* Theme toggle - mobile top right */}
+        <button
+          onClick={toggleTheme}
+          className="fixed top-3 right-3 z-50 flex h-10 w-10 items-center justify-center rounded-xl bg-card border border-border text-foreground shadow-card"
+        >
+          {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+        </button>
 
-        {mobileOpen && (
-          <>
-            <div className="fixed inset-0 z-50 bg-black/60" onClick={() => setMobileOpen(false)} />
-            <div className="fixed left-0 top-0 z-50 flex h-full w-64 flex-col gradient-sidebar py-4 px-3 animate-slide-in">
-              <div className="flex items-center justify-between mb-6 px-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary">
-                  <MessageSquare size={20} className="text-primary-foreground" />
+        <AnimatePresence>
+          {mobileOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="fixed inset-0 z-50 bg-black/60"
+                onClick={() => setMobileOpen(false)}
+              />
+              <motion.div
+                initial={{ x: "-100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "-100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 300 }}
+                className="fixed left-0 top-0 z-50 flex h-full w-64 flex-col gradient-sidebar py-4 px-3"
+              >
+                <div className="flex items-center justify-between mb-6 px-1">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl gradient-primary">
+                    <MessageSquare size={20} className="text-primary-foreground" />
+                  </div>
+                  <button onClick={() => setMobileOpen(false)} className="text-sidebar-foreground">
+                    <X size={20} />
+                  </button>
                 </div>
-                <button onClick={() => setMobileOpen(false)} className="text-sidebar-foreground">
-                  <X size={20} />
-                </button>
-              </div>
-
-              <nav className="flex flex-1 flex-col gap-1">
-                {menuItems.map((item) => {
-                  const Icon = item.icon;
-                  const isActive = activeItem === item.id;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleNav(item)}
-                      className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
-                        isActive
-                          ? "gradient-primary text-primary-foreground shadow-elevated"
-                          : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                      }`}
-                    >
-                      <Icon size={18} />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-              </nav>
-
-              <div className="flex flex-col gap-1">
-                {bottomItems.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <button
-                      key={item.id}
-                      onClick={() => handleNav(item)}
-                      className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-                    >
-                      <Icon size={18} />
-                      <span>{item.label}</span>
-                    </button>
-                  );
-                })}
-                <div className="mt-2 flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-xs font-bold text-sidebar-accent-foreground">
-                  OP
+                <nav className="flex flex-1 flex-col gap-1">
+                  {menuItems.map((item, i) => {
+                    const Icon = item.icon;
+                    const isActive = activeItem === item.id;
+                    return (
+                      <motion.button
+                        key={item.id}
+                        initial={{ opacity: 0, x: -16 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.04 }}
+                        onClick={() => handleNav(item)}
+                        className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-all ${
+                          isActive
+                            ? "gradient-primary text-primary-foreground shadow-elevated"
+                            : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                        }`}
+                      >
+                        <Icon size={18} />
+                        <span>{item.label}</span>
+                      </motion.button>
+                    );
+                  })}
+                </nav>
+                <div className="flex flex-col gap-1">
+                  {bottomItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => handleNav(item)}
+                        className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                      >
+                        <Icon size={18} />
+                        <span>{item.label}</span>
+                      </button>
+                    );
+                  })}
+                  <button
+                    onClick={toggleTheme}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  >
+                    {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
+                    <span>{theme === "dark" ? "Modo Claro" : "Modo Escuro"}</span>
+                  </button>
+                  <div className="mt-2 flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-xs font-bold text-sidebar-accent-foreground">
+                    OP
+                  </div>
                 </div>
-              </div>
-            </div>
-          </>
-        )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </>
     );
   }
 
-  // Desktop: icon-only sidebar
   return (
     <div className="flex h-full w-16 flex-col items-center gradient-sidebar py-4 flex-shrink-0">
       <div className="mb-6 flex h-10 w-10 items-center justify-center rounded-xl gradient-primary">
@@ -118,10 +168,10 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
               key={item.id}
               onClick={() => handleNav(item)}
               title={item.label}
-              className={`group relative flex h-10 w-10 items-center justify-center rounded-xl transition-all ${
+              className={`group relative flex h-10 w-10 items-center justify-center rounded-xl transition-all duration-200 ${
                 isActive
                   ? "gradient-primary text-primary-foreground shadow-elevated"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  : "text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:scale-110"
               }`}
             >
               <Icon size={20} />
@@ -133,6 +183,7 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
         })}
       </nav>
       <div className="flex flex-col items-center gap-1">
+        <ThemeToggle className="h-10 w-10" />
         {bottomItems.map((item) => {
           const Icon = item.icon;
           return (
@@ -140,7 +191,7 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
               key={item.id}
               onClick={() => handleNav(item)}
               title={item.label}
-              className="flex h-10 w-10 items-center justify-center rounded-xl text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              className="flex h-10 w-10 items-center justify-center rounded-xl text-sidebar-foreground transition-all duration-200 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:scale-110"
             >
               <Icon size={20} />
             </button>
