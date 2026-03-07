@@ -2,6 +2,7 @@ import { useState } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { Mail, Plus, Send, Eye, MousePointer, Clock, Users, MoreHorizontal, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Campaign {
   id: string;
@@ -48,6 +49,7 @@ const templates = [
 const EmailMarketing = () => {
   const [activeNav, setActiveNav] = useState("email");
   const [tab, setTab] = useState<"campanhas" | "templates">("campanhas");
+  const isMobile = useIsMobile();
 
   const totalSent = mockCampaigns.reduce((s, c) => s + c.sent, 0);
   const totalOpened = mockCampaigns.reduce((s, c) => s + c.opened, 0);
@@ -56,44 +58,44 @@ const EmailMarketing = () => {
   return (
     <div className="flex h-screen overflow-hidden">
       <AppSidebar activeItem={activeNav} onItemClick={setActiveNav} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
+      <div className={`flex flex-1 flex-col overflow-hidden ${isMobile ? "pt-14" : ""}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border bg-card px-4 sm:px-6 py-3 sm:py-4">
           <div>
             <h1 className="font-display text-lg font-bold text-foreground">E-mail Marketing</h1>
             <p className="text-xs text-muted-foreground">{mockCampaigns.length} campanhas · Taxa de abertura média: {avgOpenRate}%</p>
           </div>
-          <Button size="sm" className="gap-1.5 h-8 text-xs">
+          <Button size="sm" className="gap-1.5 h-8 text-xs w-fit">
             <Plus size={13} />
             Nova Campanha
           </Button>
         </div>
 
         {/* KPIs */}
-        <div className="grid grid-cols-4 gap-4 p-6 pb-0">
-          <div className="rounded-xl border border-border bg-card p-4 shadow-card text-center">
-            <Send size={18} className="mx-auto mb-1 text-primary" />
-            <p className="text-xl font-display font-bold text-foreground">{totalSent.toLocaleString()}</p>
-            <p className="text-[10px] text-muted-foreground">E-mails Enviados</p>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 p-4 sm:p-6 pb-0">
+          <div className="rounded-xl border border-border bg-card p-3 sm:p-4 shadow-card text-center">
+            <Send size={16} className="mx-auto mb-1 text-primary" />
+            <p className="text-lg sm:text-xl font-display font-bold text-foreground">{totalSent.toLocaleString()}</p>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground">E-mails Enviados</p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4 shadow-card text-center">
-            <Eye size={18} className="mx-auto mb-1 text-secondary" />
-            <p className="text-xl font-display font-bold text-foreground">{avgOpenRate}%</p>
-            <p className="text-[10px] text-muted-foreground">Taxa de Abertura</p>
+          <div className="rounded-xl border border-border bg-card p-3 sm:p-4 shadow-card text-center">
+            <Eye size={16} className="mx-auto mb-1 text-secondary" />
+            <p className="text-lg sm:text-xl font-display font-bold text-foreground">{avgOpenRate}%</p>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground">Taxa de Abertura</p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4 shadow-card text-center">
-            <MousePointer size={18} className="mx-auto mb-1 text-accent" />
-            <p className="text-xl font-display font-bold text-foreground">{mockCampaigns.reduce((s, c) => s + c.clicked, 0).toLocaleString()}</p>
-            <p className="text-[10px] text-muted-foreground">Cliques Totais</p>
+          <div className="rounded-xl border border-border bg-card p-3 sm:p-4 shadow-card text-center">
+            <MousePointer size={16} className="mx-auto mb-1 text-accent" />
+            <p className="text-lg sm:text-xl font-display font-bold text-foreground">{mockCampaigns.reduce((s, c) => s + c.clicked, 0).toLocaleString()}</p>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground">Cliques Totais</p>
           </div>
-          <div className="rounded-xl border border-border bg-card p-4 shadow-card text-center">
-            <Users size={18} className="mx-auto mb-1" style={{ color: "hsl(142 70% 45%)" }} />
-            <p className="text-xl font-display font-bold text-foreground">{mockCampaigns.reduce((s, c) => s + c.recipients, 0).toLocaleString()}</p>
-            <p className="text-[10px] text-muted-foreground">Contatos Alcançados</p>
+          <div className="rounded-xl border border-border bg-card p-3 sm:p-4 shadow-card text-center">
+            <Users size={16} className="mx-auto mb-1" style={{ color: "hsl(142 70% 45%)" }} />
+            <p className="text-lg sm:text-xl font-display font-bold text-foreground">{mockCampaigns.reduce((s, c) => s + c.recipients, 0).toLocaleString()}</p>
+            <p className="text-[9px] sm:text-[10px] text-muted-foreground">Contatos Alcançados</p>
           </div>
         </div>
 
         {/* Tabs */}
-        <div className="flex gap-4 px-6 pt-4">
+        <div className="flex gap-4 px-4 sm:px-6 pt-4">
           <button onClick={() => setTab("campanhas")} className={`text-xs font-medium pb-2 border-b-2 transition-colors ${tab === "campanhas" ? "border-primary text-foreground" : "border-transparent text-muted-foreground"}`}>
             Campanhas
           </button>
@@ -102,30 +104,30 @@ const EmailMarketing = () => {
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6">
           {tab === "campanhas" ? (
             <div className="space-y-3">
               {mockCampaigns.map((campaign) => (
-                <div key={campaign.id} className="rounded-xl border border-border bg-card p-4 shadow-card hover:shadow-elevated transition-all cursor-pointer">
+                <div key={campaign.id} className="rounded-xl border border-border bg-card p-3 sm:p-4 shadow-card hover:shadow-elevated transition-all cursor-pointer">
                   <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-lg gradient-primary flex-shrink-0">
                         <Mail size={18} className="text-primary-foreground" />
                       </div>
-                      <div>
-                        <div className="flex items-center gap-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
                           <h3 className="font-display font-semibold text-sm text-foreground">{campaign.name}</h3>
                           <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-medium ${statusColors[campaign.status]}`}>
                             {statusLabels[campaign.status]}
                           </span>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">{campaign.subject}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5 truncate">{campaign.subject}</p>
                       </div>
                     </div>
-                    <button className="text-muted-foreground hover:text-foreground"><MoreHorizontal size={16} /></button>
+                    <button className="text-muted-foreground hover:text-foreground flex-shrink-0"><MoreHorizontal size={16} /></button>
                   </div>
                   {campaign.sent > 0 && (
-                    <div className="grid grid-cols-4 gap-4 mt-3 pt-3 border-t border-border/50">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4 mt-3 pt-3 border-t border-border/50">
                       <div className="text-center">
                         <p className="text-sm font-bold text-foreground">{campaign.sent.toLocaleString()}</p>
                         <p className="text-[9px] text-muted-foreground">Enviados</p>
@@ -153,10 +155,10 @@ const EmailMarketing = () => {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {templates.map((tpl) => (
-                <div key={tpl.id} className="rounded-xl border border-border bg-card p-5 shadow-card hover:shadow-elevated transition-all cursor-pointer">
-                  <div className="h-32 rounded-lg mb-3 flex items-center justify-center" style={{ background: `${tpl.color}15` }}>
+                <div key={tpl.id} className="rounded-xl border border-border bg-card p-4 sm:p-5 shadow-card hover:shadow-elevated transition-all cursor-pointer">
+                  <div className="h-28 sm:h-32 rounded-lg mb-3 flex items-center justify-center" style={{ background: `${tpl.color}15` }}>
                     <FileText size={32} style={{ color: tpl.color }} />
                   </div>
                   <h3 className="font-display font-semibold text-sm text-foreground">{tpl.name}</h3>

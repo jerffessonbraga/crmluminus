@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { TrendingUp, TrendingDown, Users, MessageSquare, DollarSign, Target, ArrowUpRight, ArrowDownRight } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, AreaChart, Area } from "recharts";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const revenueData = [
   { month: "Set", value: 32000 }, { month: "Out", value: 45000 }, { month: "Nov", value: 38000 },
@@ -52,55 +53,54 @@ interface KPICardProps {
 function KPICard({ title, value, change, icon: Icon, color }: KPICardProps) {
   const isPositive = change >= 0;
   return (
-    <div className="rounded-xl border border-border bg-card p-4 shadow-card">
-      <div className="flex items-center justify-between mb-3">
-        <div className={`flex h-9 w-9 items-center justify-center rounded-lg`} style={{ background: color }}>
-          <Icon size={18} className="text-primary-foreground" />
+    <div className="rounded-xl border border-border bg-card p-3 sm:p-4 shadow-card">
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
+        <div className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg" style={{ background: color }}>
+          <Icon size={16} className="text-primary-foreground" />
         </div>
         <div className={`flex items-center gap-0.5 text-xs font-semibold ${isPositive ? "text-green-600" : "text-red-500"}`}>
           {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
           {Math.abs(change)}%
         </div>
       </div>
-      <p className="text-2xl font-display font-bold text-foreground">{value}</p>
-      <p className="text-xs text-muted-foreground mt-0.5">{title}</p>
+      <p className="text-xl sm:text-2xl font-display font-bold text-foreground">{value}</p>
+      <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5">{title}</p>
     </div>
   );
 }
 
 const Analytics = () => {
   const [activeNav, setActiveNav] = useState("analytics");
+  const isMobile = useIsMobile();
 
   return (
     <div className="flex h-screen overflow-hidden">
       <AppSidebar activeItem={activeNav} onItemClick={setActiveNav} />
-      <div className="flex flex-1 flex-col overflow-hidden">
-        <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
+      <div className={`flex flex-1 flex-col overflow-hidden ${isMobile ? "pt-14" : ""}`}>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border bg-card px-4 sm:px-6 py-3 sm:py-4">
           <div>
             <h1 className="font-display text-lg font-bold text-foreground">Dashboard</h1>
             <p className="text-xs text-muted-foreground">Visão geral da sua operação · Últimos 30 dias</p>
           </div>
-          <div className="flex items-center gap-2">
-            <select className="h-8 rounded-lg border border-input bg-background px-3 text-xs text-foreground">
-              <option>Últimos 7 dias</option>
-              <option selected>Últimos 30 dias</option>
-              <option>Últimos 90 dias</option>
-            </select>
-          </div>
+          <select className="h-8 rounded-lg border border-input bg-background px-3 text-xs text-foreground w-fit">
+            <option>Últimos 7 dias</option>
+            <option defaultValue="selected">Últimos 30 dias</option>
+            <option>Últimos 90 dias</option>
+          </select>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
           {/* KPIs */}
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
             <KPICard title="Receita Total" value="R$ 61.000" change={17.5} icon={DollarSign} color="hsl(262 83% 58%)" />
             <KPICard title="Novos Leads" value="284" change={12.3} icon={Users} color="hsl(199 89% 48%)" />
             <KPICard title="Conversões" value="95" change={-3.2} icon={Target} color="hsl(142 70% 45%)" />
             <KPICard title="Atendimentos" value="1.847" change={8.7} icon={MessageSquare} color="hsl(340 82% 52%)" />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             {/* Revenue Chart */}
-            <div className="col-span-2 rounded-xl border border-border bg-card p-4 shadow-card">
+            <div className="lg:col-span-2 rounded-xl border border-border bg-card p-4 shadow-card">
               <h3 className="font-display font-semibold text-sm text-foreground mb-4">Receita Mensal</h3>
               <ResponsiveContainer width="100%" height={240}>
                 <AreaChart data={revenueData}>
@@ -141,7 +141,7 @@ const Analytics = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Conversations per channel */}
             <div className="rounded-xl border border-border bg-card p-4 shadow-card">
               <h3 className="font-display font-semibold text-sm text-foreground mb-4">Atendimentos por Canal</h3>
@@ -162,7 +162,7 @@ const Analytics = () => {
             <div className="rounded-xl border border-border bg-card p-4 shadow-card">
               <h3 className="font-display font-semibold text-sm text-foreground mb-4">Funil de Vendas</h3>
               <div className="space-y-3">
-                {funnelData.map((stage, i) => {
+                {funnelData.map((stage) => {
                   const pct = (stage.value / funnelData[0].value) * 100;
                   return (
                     <div key={stage.name}>
@@ -181,9 +181,9 @@ const Analytics = () => {
           </div>
 
           {/* Agent performance */}
-          <div className="rounded-xl border border-border bg-card p-4 shadow-card">
+          <div className="rounded-xl border border-border bg-card p-4 shadow-card overflow-x-auto">
             <h3 className="font-display font-semibold text-sm text-foreground mb-4">Performance dos Agentes</h3>
-            <table className="w-full text-xs">
+            <table className="w-full text-xs min-w-[400px]">
               <thead>
                 <tr className="border-b border-border text-muted-foreground">
                   <th className="text-left py-2 font-medium">Agente</th>
