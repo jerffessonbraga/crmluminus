@@ -30,6 +30,12 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
   const { theme, toggleTheme } = useTheme();
+  const { signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   const handleNav = (item: typeof menuItems[0]) => {
     onItemClick(item.id);
