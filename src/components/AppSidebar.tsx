@@ -211,6 +211,13 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
             </button>
           );
         })}
+        <button
+          onClick={handleLogout}
+          title="Sair"
+          className="flex h-10 w-10 items-center justify-center rounded-xl text-destructive transition-all duration-200 hover:bg-destructive/10 hover:scale-110"
+        >
+          <LogOut size={20} />
+        </button>
         <div className="mt-2 flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-xs font-bold text-sidebar-accent-foreground">
           OP
         </div>
