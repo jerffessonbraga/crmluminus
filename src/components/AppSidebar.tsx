@@ -1,4 +1,4 @@
-import { Inbox, Users, Bot, BarChart3, Settings, Zap, MessageSquare } from "lucide-react";
+import { Inbox, Users, Bot, BarChart3, Settings, Zap, MessageSquare, Mail, Share2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 interface AppSidebarProps {
@@ -9,13 +9,15 @@ interface AppSidebarProps {
 const menuItems = [
   { id: "inbox", icon: Inbox, label: "Inbox", path: "/" },
   { id: "contacts", icon: Users, label: "CRM", path: "/crm" },
-  { id: "automation", icon: Zap, label: "Automação", path: "#" },
-  { id: "ai-agents", icon: Bot, label: "Agentes IA", path: "#" },
-  { id: "analytics", icon: BarChart3, label: "Analytics", path: "#" },
+  { id: "automation", icon: Zap, label: "Automação", path: "/automation" },
+  { id: "ai-agents", icon: Bot, label: "Agentes IA", path: "/ai-agents" },
+  { id: "analytics", icon: BarChart3, label: "Analytics", path: "/analytics" },
+  { id: "email", icon: Mail, label: "E-mail Marketing", path: "/email-marketing" },
+  { id: "social", icon: Share2, label: "Social Media", path: "/social-media" },
 ];
 
 const bottomItems = [
-  { id: "settings", icon: Settings, label: "Configurações" },
+  { id: "settings", icon: Settings, label: "Configurações", path: "/settings" },
 ];
 
 export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
@@ -63,7 +65,10 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
           return (
             <button
               key={item.id}
-              onClick={() => onItemClick(item.id)}
+              onClick={() => {
+                onItemClick(item.id);
+                if (item.path && item.path !== "#") navigate(item.path);
+              }}
               title={item.label}
               className="flex h-10 w-10 items-center justify-center rounded-xl text-sidebar-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             >
