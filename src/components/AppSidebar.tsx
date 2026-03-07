@@ -1,4 +1,5 @@
 import { Inbox, Users, Bot, BarChart3, Settings, Zap, MessageSquare } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 interface AppSidebarProps {
   activeItem: string;
@@ -6,11 +7,11 @@ interface AppSidebarProps {
 }
 
 const menuItems = [
-  { id: "inbox", icon: Inbox, label: "Inbox" },
-  { id: "contacts", icon: Users, label: "Contatos" },
-  { id: "automation", icon: Zap, label: "Automação" },
-  { id: "ai-agents", icon: Bot, label: "Agentes IA" },
-  { id: "analytics", icon: BarChart3, label: "Analytics" },
+  { id: "inbox", icon: Inbox, label: "Inbox", path: "/" },
+  { id: "contacts", icon: Users, label: "CRM", path: "/crm" },
+  { id: "automation", icon: Zap, label: "Automação", path: "#" },
+  { id: "ai-agents", icon: Bot, label: "Agentes IA", path: "#" },
+  { id: "analytics", icon: BarChart3, label: "Analytics", path: "#" },
 ];
 
 const bottomItems = [
@@ -18,6 +19,8 @@ const bottomItems = [
 ];
 
 export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
+  const navigate = useNavigate();
+
   return (
     <div className="flex h-full w-16 flex-col items-center gradient-sidebar py-4">
       {/* Logo */}
@@ -33,7 +36,10 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
           return (
             <button
               key={item.id}
-              onClick={() => onItemClick(item.id)}
+              onClick={() => {
+                onItemClick(item.id);
+                if (item.path !== "#") navigate(item.path);
+              }}
               title={item.label}
               className={`group relative flex h-10 w-10 items-center justify-center rounded-xl transition-all ${
                 isActive
@@ -42,7 +48,6 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
               }`}
             >
               <Icon size={20} />
-              {/* Tooltip */}
               <span className="pointer-events-none absolute left-14 z-50 hidden whitespace-nowrap rounded-lg bg-foreground px-2.5 py-1 text-xs font-medium text-background group-hover:block">
                 {item.label}
               </span>
@@ -66,7 +71,6 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
             </button>
           );
         })}
-        {/* User avatar */}
         <div className="mt-2 flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-xs font-bold text-sidebar-accent-foreground">
           OP
         </div>
