@@ -149,6 +149,13 @@ export function AppSidebar({ activeItem, onItemClick }: AppSidebarProps) {
                     {theme === "dark" ? <Sun size={18} /> : <Moon size={18} />}
                     <span>{theme === "dark" ? "Modo Claro" : "Modo Escuro"}</span>
                   </button>
+                  <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-destructive hover:bg-destructive/10"
+                  >
+                    <LogOut size={18} />
+                    <span>Sair</span>
+                  </button>
                   <div className="mt-2 flex h-9 w-9 items-center justify-center rounded-full bg-sidebar-accent text-xs font-bold text-sidebar-accent-foreground">
                     OP
                   </div>
