@@ -22,16 +22,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
 
       - name: Install dependencies
-        run: npm ci
+        run: bun install --frozen-lockfile
 
       - name: Build
-        run: npm run build
+        run: bun run build
         env:
           VITE_SUPABASE_URL: https://wkzoyqvguougcajjywfo.supabase.co
           VITE_SUPABASE_PUBLISHABLE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indrem95cXZndW91Z2Nhamp5d2ZvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5MTkyNzUsImV4cCI6MjA4ODQ5NTI3NX0.tHC4jFoMz8TCyd5Y0G01ByzWcemQsHgExd7PyRX_bso
