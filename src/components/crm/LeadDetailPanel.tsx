@@ -1,14 +1,16 @@
 import { Lead, defaultStages } from "@/lib/crmData";
-import { X, Phone, Mail, Building2, Calendar, Tag, User, MessageSquare } from "lucide-react";
+import { X, Phone, Mail, Building2, Calendar, Tag, User, MessageSquare, Pencil, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 interface LeadDetailPanelProps {
   lead: Lead;
   onClose: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
+export function LeadDetailPanel({ lead, onClose, onEdit, onDelete }: LeadDetailPanelProps) {
   const stage = defaultStages.find((s) => s.id === lead.stage);
 
   return (
@@ -110,6 +112,18 @@ export function LeadDetailPanel({ lead, onClose }: LeadDetailPanelProps) {
             <Phone size={14} />
             Ligar
           </Button>
+          {onEdit && (
+            <Button variant="outline" className="w-full gap-2" size="sm" onClick={onEdit}>
+              <Pencil size={14} />
+              Editar Lead
+            </Button>
+          )}
+          {onDelete && (
+            <Button variant="destructive" className="w-full gap-2" size="sm" onClick={onDelete}>
+              <Trash2 size={14} />
+              Excluir Lead
+            </Button>
+          )}
         </div>
       </div>
     </div>

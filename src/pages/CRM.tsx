@@ -3,32 +3,49 @@ import { AppSidebar } from "@/components/AppSidebar";
 import { PipelineColumn } from "@/components/crm/PipelineColumn";
 import { LeadDetailPanel } from "@/components/crm/LeadDetailPanel";
 import { CRMFilters, CRMFilterState, emptyFilters } from "@/components/crm/CRMFilters";
-import { Lead, defaultStages, mockLeads } from "@/lib/crmData";
+import { LeadFormDialog } from "@/components/crm/LeadFormDialog";
+import { defaultStages } from "@/lib/crmData";
+import { useLeads, useUpdateLead, useDeleteLead, Lead } from "@/hooks/useLeads";
 import { exportLeadsToCSV } from "@/lib/exportLeads";
-import { Search, Plus, Download, LayoutGrid, List } from "lucide-react";
+import { Search, Plus, Download, LayoutGrid, List, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { toast } from "sonner";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 
 type ViewMode = "kanban" | "table";
 
+// Adapter to map DB lead to component-compatible format
+function toComponentLead(lead: Lead) {
+  return {
+    ...lead,
+    company: lead.company ?? undefined,
+    email: lead.email ?? undefined,
+    phone: lead.phone ?? undefined,
+    tags: lead.tags ?? [],
+    assignedTo: lead.assigned_to ?? undefined,
+    channel: lead.channel as "whatsapp" | "instagram" | "messenger" | "email" | "site",
+    createdAt: new Date(lead.created_at).toLocaleString("pt-BR"),
+    lastActivity: new Date(lead.last_activity).toLocaleString("pt-BR"),
+  };
+}
+
 const CRM = () => {
   const [activeNav, setActiveNav] = useState("contacts");
-  const [leads, setLeads] = useState<Lead[]>(mockLeads);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [search, setSearch] = useState("");
   const [filters, setFilters] = useState<CRMFilterState>(emptyFilters);
   const [viewMode, setViewMode] = useState<ViewMode>("kanban");
+  const [formOpen, setFormOpen] = useState(false);
+  const [editLead, setEditLead] = useState<Lead | null>(null);
   const isMobile = useIsMobile();
+
+  const { data: leads = [], isLoading } = useLeads();
+  const updateLead = useUpdateLead();
+  const deleteLead = useDeleteLead();
 
   const handleDragStart = useCallback((e: React.DragEvent, leadId: string) => {
     e.dataTransfer.setData("leadId", leadId);
@@ -41,14 +58,13 @@ const CRM = () => {
   const handleDrop = useCallback((e: React.DragEvent, stageId: string) => {
     e.preventDefault();
     const leadId = e.dataTransfer.getData("leadId");
-    setLeads((prev) =>
-      prev.map((l) => (l.id === leadId ? { ...l, stage: stageId } : l))
-    );
-    setSelectedLead((prev) => (prev?.id === leadId ? { ...prev, stage: stageId } : prev));
-  }, []);
+    updateLead.mutate({ id: leadId, stage: stageId });
+  }, [updateLead]);
+
+  const componentLeads = useMemo(() => leads.map(toComponentLead), [leads]);
 
   const filteredLeads = useMemo(() => {
-    return leads.filter((l) => {
+    return componentLeads.filter((l) => {
       const matchSearch =
         l.name.toLowerCase().includes(search.toLowerCase()) ||
         l.company?.toLowerCase().includes(search.toLowerCase());
@@ -62,14 +78,29 @@ const CRM = () => {
       const matchMax = filters.valueMax === null || l.value <= filters.valueMax;
       return matchSearch && matchChannel && matchStage && matchTag && matchAssignee && matchMin && matchMax;
     });
-  }, [leads, search, filters]);
+  }, [componentLeads, search, filters]);
 
   const totalValue = filteredLeads.reduce((sum, l) => sum + l.value, 0);
   const totalLeads = filteredLeads.length;
 
   const handleExport = () => {
-    exportLeadsToCSV(filteredLeads);
+    exportLeadsToCSV(filteredLeads as any);
     toast.success(`${filteredLeads.length} leads exportados com sucesso!`);
+  };
+
+  const handleLeadClick = (lead: any) => {
+    const original = leads.find(l => l.id === lead.id);
+    if (original) setSelectedLead(original);
+  };
+
+  const handleEdit = (lead: Lead) => {
+    setEditLead(lead);
+    setFormOpen(true);
+  };
+
+  const handleDelete = (lead: Lead) => {
+    deleteLead.mutate(lead.id);
+    setSelectedLead(null);
   };
 
   const stageMap = Object.fromEntries(defaultStages.map((s) => [s.id, s]));
@@ -97,9 +128,8 @@ const CRM = () => {
                 className="h-8 w-full sm:w-48 rounded-lg border border-input bg-background pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
-            <CRMFilters filters={filters} onChange={setFilters} leads={leads} />
+            <CRMFilters filters={filters} onChange={setFilters} leads={componentLeads as any} />
             
-            {/* View toggle */}
             <div className="hidden sm:flex items-center rounded-lg border border-border overflow-hidden">
               <button
                 onClick={() => setViewMode("kanban")}
@@ -123,7 +153,7 @@ const CRM = () => {
               <Download size={13} />
               <span className="hidden sm:inline">Exportar</span>
             </Button>
-            <Button size="sm" className="gap-1.5 h-8 text-xs">
+            <Button size="sm" className="gap-1.5 h-8 text-xs" onClick={() => { setEditLead(null); setFormOpen(true); }}>
               <Plus size={13} />
               <span className="hidden sm:inline">Novo Lead</span>
             </Button>
@@ -148,23 +178,32 @@ const CRM = () => {
         </div>
 
         {/* Content */}
-        {viewMode === "kanban" ? (
+        {isLoading ? (
+          <div className="flex flex-1 items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : viewMode === "kanban" ? (
           <div className="flex flex-1 overflow-hidden">
             <div className="flex gap-3 p-4 overflow-x-auto flex-1">
               {defaultStages.map((stage) => (
                 <PipelineColumn
                   key={stage.id}
                   stage={stage}
-                  leads={filteredLeads.filter((l) => l.stage === stage.id)}
+                  leads={filteredLeads.filter((l) => l.stage === stage.id) as any}
                   onDragStart={handleDragStart}
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
-                  onLeadClick={setSelectedLead}
+                  onLeadClick={handleLeadClick}
                 />
               ))}
             </div>
             {selectedLead && !isMobile && (
-              <LeadDetailPanel lead={selectedLead} onClose={() => setSelectedLead(null)} />
+              <LeadDetailPanel
+                lead={toComponentLead(selectedLead) as any}
+                onClose={() => setSelectedLead(null)}
+                onEdit={() => handleEdit(selectedLead)}
+                onDelete={() => handleDelete(selectedLead)}
+              />
             )}
           </div>
         ) : (
@@ -190,7 +229,7 @@ const CRM = () => {
                       <TableRow
                         key={lead.id}
                         className="cursor-pointer hover:bg-muted/30 transition-colors"
-                        onClick={() => setSelectedLead(lead)}
+                        onClick={() => handleLeadClick(lead)}
                       >
                         <TableCell className="text-sm font-medium text-foreground">{lead.name}</TableCell>
                         <TableCell className="text-sm text-muted-foreground">{lead.company || "—"}</TableCell>
@@ -221,7 +260,7 @@ const CRM = () => {
                   {filteredLeads.length === 0 && (
                     <TableRow>
                       <TableCell colSpan={8} className="text-center py-12 text-muted-foreground text-sm">
-                        Nenhum lead encontrado com os filtros atuais
+                        {leads.length === 0 ? "Nenhum lead cadastrado. Clique em \"Novo Lead\" para começar!" : "Nenhum lead encontrado com os filtros atuais"}
                       </TableCell>
                     </TableRow>
                   )}
@@ -235,11 +274,23 @@ const CRM = () => {
         {selectedLead && isMobile && (
           <div className="fixed inset-0 z-50 bg-black/60" onClick={() => setSelectedLead(null)}>
             <div className="absolute right-0 top-0 h-full w-[85vw] max-w-sm" onClick={(e) => e.stopPropagation()}>
-              <LeadDetailPanel lead={selectedLead} onClose={() => setSelectedLead(null)} />
+              <LeadDetailPanel
+                lead={toComponentLead(selectedLead) as any}
+                onClose={() => setSelectedLead(null)}
+                onEdit={() => handleEdit(selectedLead)}
+                onDelete={() => handleDelete(selectedLead)}
+              />
             </div>
           </div>
         )}
       </div>
+
+      <LeadFormDialog
+        key={editLead?.id || "new"}
+        open={formOpen}
+        onOpenChange={setFormOpen}
+        editLead={editLead}
+      />
     </div>
   );
 };
