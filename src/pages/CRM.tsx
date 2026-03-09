@@ -1,17 +1,33 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { AppSidebar } from "@/components/AppSidebar";
 import { PipelineColumn } from "@/components/crm/PipelineColumn";
 import { LeadDetailPanel } from "@/components/crm/LeadDetailPanel";
+import { CRMFilters, CRMFilterState, emptyFilters } from "@/components/crm/CRMFilters";
 import { Lead, defaultStages, mockLeads } from "@/lib/crmData";
-import { Search, Filter, Plus } from "lucide-react";
+import { exportLeadsToCSV } from "@/lib/exportLeads";
+import { Search, Plus, Download, LayoutGrid, List } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { toast } from "sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
+
+type ViewMode = "kanban" | "table";
 
 const CRM = () => {
   const [activeNav, setActiveNav] = useState("contacts");
   const [leads, setLeads] = useState<Lead[]>(mockLeads);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<CRMFilterState>(emptyFilters);
+  const [viewMode, setViewMode] = useState<ViewMode>("kanban");
   const isMobile = useIsMobile();
 
   const handleDragStart = useCallback((e: React.DragEvent, leadId: string) => {
@@ -31,14 +47,32 @@ const CRM = () => {
     setSelectedLead((prev) => (prev?.id === leadId ? { ...prev, stage: stageId } : prev));
   }, []);
 
-  const filteredLeads = leads.filter(
-    (l) =>
-      l.name.toLowerCase().includes(search.toLowerCase()) ||
-      l.company?.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredLeads = useMemo(() => {
+    return leads.filter((l) => {
+      const matchSearch =
+        l.name.toLowerCase().includes(search.toLowerCase()) ||
+        l.company?.toLowerCase().includes(search.toLowerCase());
+      const matchChannel = filters.channels.length === 0 || filters.channels.includes(l.channel);
+      const matchStage = filters.stages.length === 0 || filters.stages.includes(l.stage);
+      const matchTag =
+        filters.tags.length === 0 || (l.tags && l.tags.some((t) => filters.tags.includes(t)));
+      const matchAssignee =
+        filters.assignees.length === 0 || (l.assignedTo && filters.assignees.includes(l.assignedTo));
+      const matchMin = filters.valueMin === null || l.value >= filters.valueMin;
+      const matchMax = filters.valueMax === null || l.value <= filters.valueMax;
+      return matchSearch && matchChannel && matchStage && matchTag && matchAssignee && matchMin && matchMax;
+    });
+  }, [leads, search, filters]);
 
-  const totalValue = leads.reduce((sum, l) => sum + l.value, 0);
-  const totalLeads = leads.length;
+  const totalValue = filteredLeads.reduce((sum, l) => sum + l.value, 0);
+  const totalLeads = filteredLeads.length;
+
+  const handleExport = () => {
+    exportLeadsToCSV(filteredLeads);
+    toast.success(`${filteredLeads.length} leads exportados com sucesso!`);
+  };
+
+  const stageMap = Object.fromEntries(defaultStages.map((s) => [s.id, s]));
 
   return (
     <div className="flex h-screen overflow-hidden">
@@ -63,9 +97,31 @@ const CRM = () => {
                 className="h-8 w-full sm:w-48 rounded-lg border border-input bg-background pl-8 pr-3 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
               />
             </div>
-            <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
-              <Filter size={13} />
-              <span className="hidden sm:inline">Filtros</span>
+            <CRMFilters filters={filters} onChange={setFilters} leads={leads} />
+            
+            {/* View toggle */}
+            <div className="hidden sm:flex items-center rounded-lg border border-border overflow-hidden">
+              <button
+                onClick={() => setViewMode("kanban")}
+                className={`flex items-center justify-center h-8 w-8 transition-colors ${
+                  viewMode === "kanban" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <LayoutGrid size={14} />
+              </button>
+              <button
+                onClick={() => setViewMode("table")}
+                className={`flex items-center justify-center h-8 w-8 transition-colors ${
+                  viewMode === "table" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted"
+                }`}
+              >
+                <List size={14} />
+              </button>
+            </div>
+
+            <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs" onClick={handleExport}>
+              <Download size={13} />
+              <span className="hidden sm:inline">Exportar</span>
             </Button>
             <Button size="sm" className="gap-1.5 h-8 text-xs">
               <Plus size={13} />
@@ -74,7 +130,7 @@ const CRM = () => {
           </div>
         </div>
 
-        {/* Stats bar - scrollable on mobile */}
+        {/* Stats bar */}
         <div className="flex items-center gap-4 border-b border-border bg-card/50 px-4 py-2 overflow-x-auto">
           {defaultStages.slice(0, -1).map((stage) => {
             const count = filteredLeads.filter((l) => l.stage === stage.id).length;
@@ -91,27 +147,91 @@ const CRM = () => {
           })}
         </div>
 
-        {/* Pipeline */}
-        <div className="flex flex-1 overflow-hidden">
-          <div className="flex gap-3 p-4 overflow-x-auto flex-1">
-            {defaultStages.map((stage) => (
-              <PipelineColumn
-                key={stage.id}
-                stage={stage}
-                leads={filteredLeads.filter((l) => l.stage === stage.id)}
-                onDragStart={handleDragStart}
-                onDragOver={handleDragOver}
-                onDrop={handleDrop}
-                onLeadClick={setSelectedLead}
-              />
-            ))}
+        {/* Content */}
+        {viewMode === "kanban" ? (
+          <div className="flex flex-1 overflow-hidden">
+            <div className="flex gap-3 p-4 overflow-x-auto flex-1">
+              {defaultStages.map((stage) => (
+                <PipelineColumn
+                  key={stage.id}
+                  stage={stage}
+                  leads={filteredLeads.filter((l) => l.stage === stage.id)}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                  onLeadClick={setSelectedLead}
+                />
+              ))}
+            </div>
+            {selectedLead && !isMobile && (
+              <LeadDetailPanel lead={selectedLead} onClose={() => setSelectedLead(null)} />
+            )}
           </div>
-          {selectedLead && !isMobile && (
-            <LeadDetailPanel lead={selectedLead} onClose={() => setSelectedLead(null)} />
-          )}
-        </div>
+        ) : (
+          <div className="flex-1 overflow-auto p-4">
+            <div className="rounded-xl border border-border bg-card overflow-hidden">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-muted/50">
+                    <TableHead className="text-xs font-semibold">Nome</TableHead>
+                    <TableHead className="text-xs font-semibold">Empresa</TableHead>
+                    <TableHead className="text-xs font-semibold">Valor</TableHead>
+                    <TableHead className="text-xs font-semibold">Etapa</TableHead>
+                    <TableHead className="text-xs font-semibold">Canal</TableHead>
+                    <TableHead className="text-xs font-semibold">Responsável</TableHead>
+                    <TableHead className="text-xs font-semibold">Última Atividade</TableHead>
+                    <TableHead className="text-xs font-semibold">Tags</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLeads.map((lead) => {
+                    const stage = stageMap[lead.stage];
+                    return (
+                      <TableRow
+                        key={lead.id}
+                        className="cursor-pointer hover:bg-muted/30 transition-colors"
+                        onClick={() => setSelectedLead(lead)}
+                      >
+                        <TableCell className="text-sm font-medium text-foreground">{lead.name}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{lead.company || "—"}</TableCell>
+                        <TableCell className="text-sm font-bold text-primary">
+                          R$ {lead.value.toLocaleString("pt-BR")}
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1.5">
+                            <div className="h-2 w-2 rounded-full" style={{ background: stage?.color }} />
+                            <span className="text-xs">{stage?.name}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground capitalize">{lead.channel}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{lead.assignedTo || "—"}</TableCell>
+                        <TableCell className="text-xs text-muted-foreground">{lead.lastActivity}</TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {(lead.tags || []).map((tag) => (
+                              <Badge key={tag} variant="secondary" className="text-[10px] px-1.5 py-0 h-4 bg-muted text-muted-foreground border-0">
+                                {tag}
+                              </Badge>
+                            ))}
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {filteredLeads.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-12 text-muted-foreground text-sm">
+                        Nenhum lead encontrado com os filtros atuais
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        )}
 
-        {/* Mobile lead detail as overlay */}
+        {/* Mobile lead detail overlay */}
         {selectedLead && isMobile && (
           <div className="fixed inset-0 z-50 bg-black/60" onClick={() => setSelectedLead(null)}>
             <div className="absolute right-0 top-0 h-full w-[85vw] max-w-sm" onClick={(e) => e.stopPropagation()}>
